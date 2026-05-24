@@ -349,7 +349,7 @@
 const EMAILJS_SERVICE_ID = "service_npm4b1b";
 const EMAILJS_TEMPLATE_ID = "template_bww551g";
 const EMAILJS_PUBLIC_KEY = "Dl6NReGq2ElFET45U";
-const ANTHROPIC_API_KEY = "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";
+let ANTHROPIC_API_KEY = "";
 const APPROVAL_EMAIL = "hamzah.faruq007@gmail.com";
 
 emailjs.init(EMAILJS_PUBLIC_KEY);
@@ -588,8 +588,7 @@ async function initChat() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': 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
-    ,
+      'x-api-key': ANTHROPIC_API_KEY,
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true'
     },
@@ -629,7 +628,16 @@ function autoResize(el) {
   el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 }
 
-initChat();
+// Ask for API key on load
+window.addEventListener("DOMContentLoaded", () => {
+  const key = prompt("Enter your Anthropic API key to start:");
+  if (key && key.trim().startsWith("sk-ant-")) {
+    ANTHROPIC_API_KEY = key.trim();
+    initChat();
+  } else {
+    alert("Invalid or missing API key. Please refresh and try again.");
+  }
+});
 </script>
 </body>
 </html>
