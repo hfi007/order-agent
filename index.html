@@ -628,15 +628,35 @@ function autoResize(el) {
   el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 }
 
-// Ask for API key on load
 window.addEventListener("DOMContentLoaded", () => {
-  const key = prompt("Enter your Anthropic API key to start:");
-  if (key && key.trim().startsWith("sk-ant-")) {
-    ANTHROPIC_API_KEY = key.trim();
-    initChat();
-  } else {
-    alert("Invalid or missing API key. Please refresh and try again.");
-  }
+  const overlay = document.createElement('div');
+  overlay.id = 'keyOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;z-index:999;padding:24px;';
+  overlay.innerHTML = `
+    <div style="width:100%;max-width:420px;background:#111;border:1px solid #222;border-radius:16px;padding:32px;">
+      <div style="font-family:sans-serif;font-weight:800;font-size:20px;color:#e8ff47;margin-bottom:8px;">Order Agent</div>
+      <div style="font-size:12px;color:#666;margin-bottom:24px;font-family:monospace;">Enter your Anthropic API key to start</div>
+      <input id="apiKeyInput" type="text" placeholder="sk-ant-..." style="width:100%;background:#0a0a0a;border:1px solid #333;border-radius:10px;padding:12px 16px;color:#f0f0f0;font-family:monospace;font-size:12px;outline:none;margin-bottom:12px;box-sizing:border-box;" />
+      <button id="apiKeySubmit" style="width:100%;background:#e8ff47;border:none;border-radius:10px;padding:12px;font-family:sans-serif;font-weight:700;font-size:14px;cursor:pointer;">Start</button>
+      <div id="apiKeyError" style="color:#ff6b35;font-size:11px;margin-top:10px;display:none;">Invalid key — must start with sk-ant-</div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  document.getElementById('apiKeySubmit').addEventListener('click', () => {
+    const key = document.getElementById('apiKeyInput').value.trim();
+    if (key.startsWith('sk-ant-')) {
+      ANTHROPIC_API_KEY = key;
+      document.getElementById('keyOverlay').remove();
+      initChat();
+    } else {
+      document.getElementById('apiKeyError').style.display = 'block';
+    }
+  });
+
+  document.getElementById('apiKeyInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('apiKeySubmit').click();
+  });
 });
 </script>
 </body>
