@@ -532,11 +532,17 @@ async function sendMessage() {
 }
 
 async function sendApprovalEmail(orderData) {
+  const orderId = 'order_' + Date.now();
+  orderData._id = orderId;
+
   const itemsList = orderData.items.map((item, i) =>
     `Item ${i+1}: ${item.quantity}x ${item.product} — ${item.supplier}${item.notes ? ' (' + item.notes + ')' : ''}`
   ).join('\n');
 
-  const message = `New order requires your approval.\n\nColleague: ${orderData.colleague_name}\nUrgency: ${orderData.urgency}\n\nItems:\n${itemsList}\n\nReply APPROVE to confirm or REJECT to decline.\n\n— Order Agent`;
+  const approveUrl = `https://order-proxy.hamzah-faruq007.workers.dev/approve?id=${orderId}`;
+  const rejectUrl = `https://order-proxy.hamzah-faruq007.workers.dev/reject?id=${orderId}`;
+
+  const message = `New order requires your approval.\n\nColleague: ${orderData.colleague_name}\nUrgency: ${orderData.urgency}\n\nItems:\n${itemsList}\n\n✅ APPROVE: ${approveUrl}\n\n❌ REJECT: ${rejectUrl}\n\n— Order Agent`;
 
   const msgs = document.getElementById('messages');
   const div = document.createElement('div');
@@ -562,6 +568,9 @@ async function sendApprovalEmail(orderData) {
     status.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> Approval email sent`;
     bubble.appendChild(status);
 
+    // Start polling for approval
+    pollForApproval(orderData._id);
+
   } catch (err) {
     bubble.textContent = `Order logged, but there was an issue sending the approval email. Please notify the manager manually.`;
 
@@ -578,6 +587,48 @@ async function sendApprovalEmail(orderData) {
   div.appendChild(bubble);
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function pollForApproval(orderId) {
+  const msgs = document.getElementById('messages');
+  let attempts = 0;
+  const maxAttempts = 120; // 10 minutes
+
+  const interval = setInterval(async () => {
+    attempts++;
+    if (attempts > maxAttempts) {
+      clearInterval(interval);
+      return;
+    }
+
+    try {
+      const res = await fetch(`https://order-proxy.hamzah-faruq007.workers.dev/status?id=${orderId}`);
+      const data = await res.json();
+
+      if (data.status === 'approved' || data.status === 'rejected') {
+        clearInterval(interval);
+
+        const div = document.createElement('div');
+        div.className = 'message agent';
+        const label = document.createElement('div');
+        label.className = 'message-label';
+        label.textContent = 'Agent';
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+
+        if (data.status === 'approved') {
+          bubble.textContent = '✅ Order has been approved by the manager. The order will now be placed with the supplier.';
+        } else {
+          bubble.textContent = '❌ Order has been rejected by the manager. Please speak with them for more details.';
+        }
+
+        div.appendChild(label);
+        div.appendChild(bubble);
+        msgs.appendChild(div);
+        msgs.scrollTop = msgs.scrollHeight;
+      }
+    } catch(e) {}
+  }, 5000); // Check every 5 seconds
 }
 
 async function initChat() {
