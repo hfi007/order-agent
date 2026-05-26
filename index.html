@@ -556,6 +556,13 @@ async function sendApprovalEmail(orderData) {
   bubble.className = 'bubble';
 
   try {
+    // Save order data to worker for auto-ordering
+    await fetch('https://order-proxy.hamzah-faruq007.workers.dev/save-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...orderData, orderId })
+    });
+
     await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
       to_email: APPROVAL_EMAIL,
       message: message
